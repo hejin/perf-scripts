@@ -17,14 +17,19 @@ all_task_iostat = {}
 def get_valid_tasks(a_dir):
     global pid_min
     tasks = []
-    subdirs = os.listdir(a_dir)
-    pid_me = os.getpid()
-    for name in subdirs:
-        if os.path.isdir(os.path.join(a_dir, name)):
-            if name.isdigit():
-               pid_num = int(name)
-               if pid_num > pid_min and pid_num != pid_me:
-                 tasks.append(pid_num)
+
+    try:
+        subdirs = os.listdir(a_dir)
+        pid_me = os.getpid()
+        for name in subdirs:
+            if os.path.isdir(os.path.join(a_dir, name)):
+                if name.isdigit():
+                    pid_num = int(name)
+                    if pid_num > pid_min and pid_num != pid_me:
+                        tasks.append(pid_num)
+    except OSError:
+        pass
+
     return tasks
 
 
@@ -41,11 +46,23 @@ def get_task_iostat(now, task):
     task_iostat = {}
     task_iostat['exec'] = proc
     task_iostat['time'] = now
-    with open(iostat_file, "r") as f:
-        for line in f:
-            name, value = line.split(': ', 2)
-            task_iostat[name] = int(value)
-    f.close()
+    task_iostat['rchar'] = 0
+    task_iostat['wchar'] = 0
+    task_iostat['read_bytes'] = 0
+    task_iostat['write_bytes'] = 0
+    task_iostat['syscw'] = 0
+    task_iostat['syscr'] = 0
+    try:
+        with open(iostat_file, "r") as f:
+            for line in f:
+                name, value = line.split(': ', 2)
+                task_iostat[name] = int(value)
+        f.close()
+    except OSError:
+        pass
+    except IOError:
+        pass
+
     return task_iostat
 
 
@@ -55,7 +72,7 @@ def get_task_iostat(now, task):
 def show_iostat(iter):
     global all_task_iostat
 
-    print "round    pid   time                       wchar      rchar      syscallr   syscallw   wbytes     rbytes     exe_name"
+    print "round    pid   time                       wchar        rchar        syscallr   syscallw   wbytes       rbytes       exe_name"
     for pid in all_task_iostat.keys():
         iostat = all_task_iostat[pid]
         rchar  = iostat['rchar']
@@ -66,7 +83,7 @@ def show_iostat(iter):
         syscr  = iostat['syscr']
         proc   = iostat['exec']
         now    = iostat['time']
-        print ("%-8d %-5d %-26s %-10d %-10d %-10d %-10d %-10d %-10d %s") % \
+        print ("%-8d %-5d %-26s %-12d %-12d %-10d %-12d %-12d %-10d %s") % \
                (iter, pid, now, wchar, rchar, syscr, syscw, wbytes, rbytes, proc)
         # TODO iostats can be saved to db or anywhere else.
         # TODO we can also produce incremental delta here, or this can be re-processed
