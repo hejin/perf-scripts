@@ -44,6 +44,7 @@ def get_task_iostat(now, task):
         proc = 'NULL'
         pass
     task_iostat = {}
+    task_iostat['pid'] = task
     task_iostat['exec'] = proc
     task_iostat['time'] = now
     task_iostat['rchar'] = 0
@@ -72,9 +73,17 @@ def get_task_iostat(now, task):
 def show_iostat(iter):
     global all_task_iostat
 
+    tmp = all_task_iostat.items()
+
+    # if we want to sort the results according to your preference, please modify.
+    sort_by1 = "wchar" # for possible values, please see below
+    sort_by2 = "rchar" # for possible values, please see below
+    tmp = sorted(tmp, key=lambda d: (d[1][sort_by1], d[1][sort_by2]))
+
     print "round    pid   time                       wchar        rchar        syscallr   syscallw   wbytes       rbytes       exe_name"
-    for pid in all_task_iostat.keys():
-        iostat = all_task_iostat[pid]
+    for ios in tmp:
+        iostat = ios[1]
+        pid    = iostat['pid']
         rchar  = iostat['rchar']
         wchar  = iostat['wchar']
         rbytes = iostat['read_bytes']
