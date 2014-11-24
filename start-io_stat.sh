@@ -6,4 +6,4 @@ if [ $me != "root" ]; then
    exit 1
 fi
 
-python ./io_stat.py $1 $2 $3 $4
+python ./io_stat_new.py $1 $2 $3 $4
